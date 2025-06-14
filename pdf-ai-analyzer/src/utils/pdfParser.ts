@@ -1,11 +1,7 @@
-// Use the global pdfjsLib loaded from CDN
-declare global {
-  interface Window {
-    pdfjsLib: any;
-  }
-}
+import * as pdfjsLib from 'pdfjs-dist';
 
-const pdfjsLib = window.pdfjsLib;
+// Set worker src - webpack will handle copying the worker file
+pdfjsLib.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
 
 export interface PDFExtractionResult {
   text: string;
