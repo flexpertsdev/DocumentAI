@@ -24,37 +24,65 @@ export const QuestionExtractor: React.FC<QuestionExtractorProps> = ({ isProcessi
   const [showResults, setShowResults] = useState(false);
 
   const extractQuestions = async () => {
-    const extractedText = localStorage.getItem('lastExtractedText');
-    if (!extractedText) {
+    const storedDoc = localStorage.getItem('lastExtractedDocument');
+    if (!storedDoc) {
       setError('Please upload a PDF first');
       return;
     }
 
+    const docData = JSON.parse(storedDoc);
     setIsExtracting(true);
     setError(null);
 
     try {
-      const response = await axios.post('/.netlify/functions/extract-questions', {
-        text: extractedText,
-        mode,
-      });
+      let response;
+      
+      if (docData.useVisionMode && docData.images && mode === 'extract') {
+        // Use vision API for question extraction
+        response = await axios.post('/.netlify/functions/analyze-pdf-vision', {
+          images: docData.images.map((img: any) => img.imageDataUrl),
+          analysisType: 'extract-questions',
+        });
+      } else {
+        // Use text-based extraction
+        const extractedText = localStorage.getItem('lastExtractedText');
+        response = await axios.post('/.netlify/functions/extract-questions', {
+          text: extractedText,
+          mode,
+        });
+      }
 
-      if (response.data.success) {
-        const { data } = response.data;
+      if (response.data.success || response.data.questions) {
+        const questions = response.data.questions || response.data.data?.questions || [];
         
-        // Store in localStorage for pattern analysis
+        // Format for display
+        const formattedQuestions = questions.map((q: any, index: number) => ({
+          id: q.id || `q_${index}`,
+          originalText: q.originalText || q.text || q.question,
+          question: q.question || q.text,
+          questionType: q.type || q.questionType || 'unknown',
+          options: q.options,
+          answer: q.answer,
+          topic: q.topic,
+          source: docData.useVisionMode ? 'extracted' : q.source || 'generated',
+        }));
+        
+        // Store in localStorage
+        const questionData = {
+          documentId: docData.id,
+          extractedAt: new Date().toISOString(),
+          questions: formattedQuestions,
+          mode,
+          useVisionMode: docData.useVisionMode,
+        };
+        
         const existingData = JSON.parse(localStorage.getItem('questionDatabase') || '[]');
-        existingData.push(data);
+        existingData.push(questionData);
         localStorage.setItem('questionDatabase', JSON.stringify(existingData));
         
         // Display questions
-        setQuestions(data.questions);
+        setQuestions(formattedQuestions);
         setShowResults(true);
-        
-        // Show analysis
-        if (data.analysis?.examPredictions) {
-          console.log('Exam predictions:', data.analysis.examPredictions);
-        }
       }
     } catch (err) {
       setError('Failed to extract questions. Please try again.');

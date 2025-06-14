@@ -3,6 +3,7 @@ import './App.css';
 import { PDFUploader } from './components/PDFUploader';
 import { AnalysisResults } from './components/AnalysisResults';
 import { QuestionExtractor } from './components/QuestionExtractor';
+import { VisionModeToggle } from './components/VisionModeToggle';
 import { usePDFExtraction } from './hooks/usePDFExtraction';
 import { AnalysisResult, Quiz, AnalysisType } from './types';
 import axios from 'axios';
@@ -14,6 +15,7 @@ function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'analysis' | 'quiz' | 'questions'>('analysis');
+  const [useVisionMode, setUseVisionMode] = useState(true); // Default to vision mode for math
   
   const { extractText, status: extractionStatus, error: extractionError } = usePDFExtraction();
 
@@ -24,9 +26,9 @@ function App() {
     setAnalysisError(null);
     
     try {
-      const extractionResult = await extractText(file);
+      const extractionResult = await extractText(file, useVisionMode);
       
-      if (extractionResult && extractionResult.text) {
+      if (extractionResult) {
         // Store comprehensive extraction data
         const documentData = {
           id: `doc_${Date.now()}`,
@@ -34,10 +36,12 @@ function App() {
           uploadedAt: new Date().toISOString(),
           pageCount: extractionResult.pageCount,
           rawText: extractionResult.text,
-          processedText: extractionResult.processedText,
-          markdown: extractionResult.markdown,
-          formulas: extractionResult.formulas,
+          processedText: extractionResult.processedText || extractionResult.text,
+          markdown: extractionResult.markdown || extractionResult.text,
+          formulas: extractionResult.formulas || [],
           metadata: extractionResult.metadata,
+          images: extractionResult.images,
+          useVisionMode,
         };
         
         // Store in localStorage
@@ -49,7 +53,10 @@ function App() {
         library.push(documentData);
         localStorage.setItem('documentLibrary', JSON.stringify(library));
         
-        console.log(`Extracted ${extractionResult.formulas.length} math formulas`);
+        console.log(`Extracted ${extractionResult.formulas?.length || 0} math formulas`);
+        if (useVisionMode && extractionResult.images) {
+          console.log(`Converted ${extractionResult.images.length} pages to images for vision processing`);
+        }
       }
     } catch (err) {
       console.error('Extraction failed:', err);
@@ -71,11 +78,24 @@ function App() {
       const storedDoc = localStorage.getItem('lastExtractedDocument');
       const docData = storedDoc ? JSON.parse(storedDoc) : null;
       
-      const response = await axios.post('/.netlify/functions/analyze-pdf-enhanced', {
-        text: extractedText,
-        analysisType,
-        formulas: docData?.formulas || [],
-      });
+      // Use vision API if images are available
+      const endpoint = docData?.useVisionMode && docData?.images 
+        ? '/.netlify/functions/analyze-pdf-vision'
+        : '/.netlify/functions/analyze-pdf-enhanced';
+      
+      const requestData = docData?.useVisionMode && docData?.images
+        ? {
+            images: docData.images.slice(0, 5).map((img: any) => img.imageDataUrl), // Limit to first 5 pages for API limits
+            analysisType: analysisType === 'key-points' ? 'summary' : analysisType, // Vision API handles differently
+            pageNumbers: docData.images.slice(0, 5).map((img: any) => img.pageNumber),
+          }
+        : {
+            text: extractedText,
+            analysisType,
+            formulas: docData?.formulas || [],
+          };
+      
+      const response = await axios.post(endpoint, requestData);
 
       if (response.data.success) {
         setAnalysisResult(response.data.analysis);
@@ -138,6 +158,12 @@ function App() {
       </header>
 
       <main style={{ maxWidth: '800px', margin: '0 auto', padding: '0 20px' }}>
+        <VisionModeToggle
+          useVisionMode={useVisionMode}
+          onToggle={setUseVisionMode}
+          disabled={isProcessing || !!selectedFile}
+        />
+        
         <PDFUploader 
           onFileSelect={handleFileSelect}
           isProcessing={isProcessing}
@@ -158,7 +184,7 @@ function App() {
                 {selectedFile.name} • 
                 {localStorage.getItem('lastExtractedDocument') && (() => {
                   const doc = JSON.parse(localStorage.getItem('lastExtractedDocument')!);
-                  return `${doc.pageCount} pages • ${doc.formulas?.length || 0} formulas detected`;
+                  return `${doc.pageCount} pages • ${doc.useVisionMode ? '🖼️ Vision Mode' : `${doc.formulas?.length || 0} formulas detected`}`;
                 })()}
               </p>
             </div>
