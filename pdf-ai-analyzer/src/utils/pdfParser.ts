@@ -1,7 +1,11 @@
-import * as pdfjsLib from 'pdfjs-dist';
+// Use the global pdfjsLib loaded from CDN
+declare global {
+  interface Window {
+    pdfjsLib: any;
+  }
+}
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+const pdfjsLib = window.pdfjsLib;
 
 export interface PDFExtractionResult {
   text: string;
