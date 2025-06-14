@@ -37,11 +37,13 @@ export const QuestionExtractor: React.FC<QuestionExtractorProps> = ({ isProcessi
     try {
       let response;
       
-      if (docData.useVisionMode && docData.images && mode === 'extract') {
+      if (docData.useVisionMode && (window as any).currentDocumentImages && mode === 'extract') {
         // Use vision API for question extraction
+        const storedImages = (window as any).currentDocumentImages;
         response = await axios.post('/.netlify/functions/analyze-pdf-vision', {
-          images: docData.images.map((img: any) => img.imageDataUrl),
+          images: storedImages.slice(0, 5).map((img: any) => img.imageDataUrl),
           analysisType: 'extract-questions',
+          pageNumbers: storedImages.slice(0, 5).map((img: any) => img.pageNumber),
         });
       } else {
         // Use text-based extraction

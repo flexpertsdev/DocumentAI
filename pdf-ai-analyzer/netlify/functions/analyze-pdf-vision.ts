@@ -160,7 +160,13 @@ Be extremely precise with mathematical notation - superscripts, subscripts, frac
         result.error = 'Failed to parse as JSON';
       }
     } else {
-      result.content = aiResponse;
+      // Format response to match expected structure
+      result.analysis = {
+        summary: analysisType === 'summary' ? aiResponse : undefined,
+        keyPointsFormatted: analysisType === 'summary' ? aiResponse : undefined,
+        timestamp: new Date().toISOString(),
+        analysisType,
+      };
     }
 
     return {

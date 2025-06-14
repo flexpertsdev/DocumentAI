@@ -93,112 +93,48 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           {analysis.summary && (
             <div style={{ marginBottom: '20px' }}>
               <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>Summary</h3>
-              <p style={{ lineHeight: '1.6', color: '#333' }}>{analysis.summary}</p>
+              <pre style={{ 
+                lineHeight: '1.8', 
+                color: '#333',
+                backgroundColor: '#f8f8f8',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #e0e0e0',
+                whiteSpace: 'pre-wrap',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontSize: '14px',
+              }}>
+                {analysis.summary}
+              </pre>
             </div>
           )}
           
           {(analysis.keyPointsFormatted || analysis.keyPoints) && (
             <div style={{ marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <h3 style={{ fontSize: '18px', margin: 0 }}>Key Points</h3>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {showFormatted && (
-                    <button
-                      onClick={() => setShowFormatted(false)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#888',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Show Original
-                    </button>
-                  )}
-                  <button
-                    onClick={() => formatContent(analysis.keyPointsFormatted || analysis.keyPoints?.join('\n') || '', 'key-points')}
-                    disabled={isFormatting}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: '#673ab7',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      fontSize: '14px',
-                      cursor: isFormatting ? 'not-allowed' : 'pointer',
-                      opacity: isFormatting ? 0.6 : 1,
-                    }}
-                  >
-                    {isFormatting ? 'Formatting...' : '✨ Format with AI'}
-                  </button>
-                </div>
-              </div>
-              {showFormatted && formattedContent ? (
-                <div 
-                  style={{ 
-                    lineHeight: '1.8', 
-                    color: '#333',
-                    backgroundColor: 'white',
-                    padding: '16px',
-                    borderRadius: '8px',
-                    border: '1px solid #e0e0e0',
-                    marginTop: '12px',
-                  }}
-                  dangerouslySetInnerHTML={{ 
-                    __html: formattedContent
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                      .replace(/🟢/g, '<span style="color: #22c55e; font-size: 16px;">🟢</span>')
-                      .replace(/🟡/g, '<span style="color: #eab308; font-size: 16px;">🟡</span>')
-                      .replace(/🔴/g, '<span style="color: #ef4444; font-size: 16px;">🔴</span>')
-                      .replace(/\[High confidence\]/g, '<span style="color: #22c55e; font-weight: 600; font-size: 12px;">[High confidence]</span>')
-                      .replace(/\[Medium confidence\]/g, '<span style="color: #eab308; font-weight: 600; font-size: 12px;">[Medium confidence]</span>')
-                      .replace(/\[Low confidence - needs review\]/g, '<span style="color: #ef4444; font-weight: 600; font-size: 12px;">[Low confidence - needs review]</span>')
-                      .replace(/\$\$(.*?)\$\$/g, '<div style="text-align: center; margin: 10px 0;"><code style="background: #f5f5f5; padding: 8px 12px; border-radius: 4px; display: inline-block;">$1</code></div>')
-                      .replace(/\$(.*?)\$/g, '<code style="background: #f5f5f5; padding: 2px 4px; border-radius: 3px;">$1</code>')
-                      .replace(/^###\s+(.*)$/gm, '<h4 style="margin-top: 20px; margin-bottom: 12px; color: #333;">$1</h4>')
-                      .replace(/^##\s+(.*)$/gm, '<h3 style="margin-top: 24px; margin-bottom: 16px; color: #222;">$1</h3>')
-                      .replace(/^-\s+(.*)$/gm, '<div style="margin-left: 20px; margin-bottom: 8px;">• $1</div>')
-                      .replace(/\n\n/g, '</p><p style="margin-bottom: 12px;">')
-                      .replace(/^(.+)$/gm, (match) => {
-                        if (!match.startsWith('<') && !match.includes('•')) {
-                          return `<p style="margin-bottom: 12px;">${match}</p>`;
-                        }
-                        return match;
-                      })
-                  }}
-                />
-              ) : (
-                <>
-                  {analysis.keyPointsFormatted ? (
-                    <div 
-                      style={{ 
-                        lineHeight: '1.6', 
-                        color: '#333',
-                        whiteSpace: 'pre-wrap',
-                      }}
-                      dangerouslySetInnerHTML={{ 
-                        __html: analysis.keyPointsFormatted
-                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                          .replace(/\$(.*?)\$/g, '<code>$1</code>')
-                          .replace(/^#+\s+(.*)$/gm, '<h4>$1</h4>')
-                          .replace(/^-\s+(.*)$/gm, '• $1<br/>')
-                      }}
-                    />
-                  ) : analysis.keyPoints ? (
-                    <ul style={{ paddingLeft: '20px' }}>
-                      {analysis.keyPoints.map((point: string, index: number) => (
-                        <li key={index} style={{ marginBottom: '4px', lineHeight: '1.5' }}>
-                          {point}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </>
-              )}
+              <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>Key Points</h3>
+              {analysis.keyPointsFormatted ? (
+                <pre style={{ 
+                  lineHeight: '1.8', 
+                  color: '#333',
+                  backgroundColor: '#f8f8f8',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  border: '1px solid #e0e0e0',
+                  whiteSpace: 'pre-wrap',
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontSize: '14px',
+                }}>
+                  {analysis.keyPointsFormatted}
+                </pre>
+              ) : analysis.keyPoints ? (
+                <ul style={{ paddingLeft: '20px' }}>
+                  {analysis.keyPoints.map((point: string, index: number) => (
+                    <li key={index} style={{ marginBottom: '4px', lineHeight: '1.5' }}>
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           )}
           
