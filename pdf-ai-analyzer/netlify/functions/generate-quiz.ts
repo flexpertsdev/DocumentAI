@@ -16,7 +16,7 @@ const handler: Handler = async (event) => {
   }
 
   try {
-    const { text, numberOfQuestions = 5, difficulty = 'medium' } = JSON.parse(event.body || '{}');
+    const { text, numberOfQuestions = 5, difficulty = 'medium', formulas = [] } = JSON.parse(event.body || '{}');
 
     if (!text) {
       return {
@@ -41,9 +41,21 @@ const handler: Handler = async (event) => {
       ? text.substring(0, maxTextLength) + '...' 
       : text;
 
+    // Add formula context
+    const formulaInfo = formulas.length > 0 
+      ? `\nThe document contains ${formulas.length} mathematical formulas. When creating questions about math:
+- Use proper LaTeX notation in questions and answers
+- Common corrupted patterns: x2 → x², # → /, log#x → log₂(x)
+- Ensure mathematical expressions are clear and correct\n`
+      : '';
+    
     const prompt = `Based on the following text, generate ${numberOfQuestions} multiple-choice questions at ${difficulty} difficulty level.
 
-IMPORTANT: The text may contain math formulas in LaTeX format like $formula$ or $$formula$$. Preserve these in your questions.
+IMPORTANT: 
+1. The text may contain corrupted math from PDF extraction. Fix these intelligently.
+2. Use LaTeX notation for all math: $inline$ or $$block$$
+3. Ensure questions test understanding, not just recall
+${formulaInfo}
     
 Format the response as a JSON object with a "questions" array where each question has:
 - question: the question text

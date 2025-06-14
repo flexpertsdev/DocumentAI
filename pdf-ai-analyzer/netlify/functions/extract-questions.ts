@@ -97,46 +97,47 @@ const handler: Handler = async (event) => {
 };
 
 async function extractExistingQuestions(text: string, apiKey: string) {
-  const prompt = `Analyze this document and extract ALL existing questions, problems, exercises, and examples exactly as they appear. This is critical for building a question database.
+  // First, clean up the text to help with question detection
+  const cleanedText = text
+    .replace(/([a-zA-Z])([0-9]+)(?=\s|$)/g, '$1^$2') // Fix exponents
+    .replace(/\s*[#$%&']\s*/g, ' / '); // Fix corrupted operators
+  
+  const prompt = `You are analyzing an academic document to extract questions. The text may contain corrupted mathematical symbols from PDF extraction.
 
-IMPORTANT: Extract questions VERBATIM - preserve exact wording, formatting, and structure.
+Common issues to fix:
+- "x2" should be "x²" or "x^2"
+- "#", "$", "%", "&" often represent mathematical operators
+- "log#x" might mean "log₂(x)"
+- Corrupted fractions and special symbols
 
-For each question found, provide:
-1. originalText: The EXACT text of the question as it appears
-2. questionType: multiple_choice/short_answer/essay/calculation/true_false/fill_blank
-3. question: Cleaned version (remove question numbers, but keep content identical)
-4. options: For multiple choice, list all options exactly
-5. answer: If answer is provided in the text
-6. points: If point value is mentioned
-7. topic: What topic/chapter this relates to
-8. pageNumber: Approximate location in document
+Extract ALL questions/problems/exercises found in the document. For each one, provide:
 
-Also identify:
-- Question patterns (how questions are typically structured)
-- Common topics that appear in questions
-- Exam predictions based on emphasis and repetition
+1. originalText: The EXACT text as it appears (including any corruption)
+2. question: The cleaned, corrected version with proper math notation
+3. questionType: multiple_choice/short_answer/essay/calculation/true_false/fill_blank
+4. options: Array of options if multiple choice
+5. answer: If the answer is provided
+6. topic: The subject/topic area
+7. difficulty: easy/medium/hard based on content
 
-Focus on finding:
-- Numbered questions (1., 2., Q1, Question 1, etc.)
-- Problem sets
-- Exercises
-- Sample exam questions
-- Practice problems
-- Review questions
-- "Example:" sections with questions
+Look for:
+- Questions starting with numbers (1., 2., Q1, etc.)
+- "Find...", "Calculate...", "Solve...", "Evaluate...", "Prove..."
+- "Exercise:", "Problem:", "Example:"
+- Any text that asks for a solution or answer
 
-Return as JSON with structure:
+Return as JSON:
 {
-  "questions": [...],
-  "patterns": ["pattern1", "pattern2"],
-  "topics": ["topic1", "topic2"],
+  "questions": [array of question objects],
+  "patterns": [common question patterns found],
+  "topics": [main topics covered],
   "examPredictions": [
-    {"topic": "...", "probability": 0.8, "reasoning": "..."}
+    {"topic": "...", "probability": 0.0-1.0, "reasoning": "..."}
   ]
 }
 
-Text to analyze:
-${text}`;
+Document text:
+${cleanedText}`;
 
   const response = await callOpenAI(prompt, apiKey, 
     'You are an expert at extracting educational questions from documents. Extract questions EXACTLY as they appear for database storage and pattern analysis.'

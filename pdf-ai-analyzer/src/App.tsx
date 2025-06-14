@@ -67,9 +67,14 @@ function App() {
     setAnalysisError(null);
 
     try {
-      const response = await axios.post('/.netlify/functions/analyze-pdf', {
+      // Get the stored document data which includes formulas
+      const storedDoc = localStorage.getItem('lastExtractedDocument');
+      const docData = storedDoc ? JSON.parse(storedDoc) : null;
+      
+      const response = await axios.post('/.netlify/functions/analyze-pdf-enhanced', {
         text: extractedText,
         analysisType,
+        formulas: docData?.formulas || [],
       });
 
       if (response.data.success) {
@@ -94,10 +99,15 @@ function App() {
     setAnalysisError(null);
 
     try {
+      // Get the stored document data which includes formulas
+      const storedDoc = localStorage.getItem('lastExtractedDocument');
+      const docData = storedDoc ? JSON.parse(storedDoc) : null;
+      
       const response = await axios.post('/.netlify/functions/generate-quiz', {
         text: extractedText,
         numberOfQuestions: 5,
         difficulty: 'medium',
+        formulas: docData?.formulas || [],
       });
 
       if (response.data.success) {

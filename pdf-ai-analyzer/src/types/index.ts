@@ -1,11 +1,14 @@
 export interface AnalysisResult {
   summary?: string;
   keyPoints?: string[];
+  keyPointsFormatted?: string;
   entities?: {
     people?: string[];
     organizations?: string[];
     locations?: string[];
     dates?: string[];
+    concepts?: string[];
+    terms?: string[];
   };
   analysisType: string;
   wordCount: number;

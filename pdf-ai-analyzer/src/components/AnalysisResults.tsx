@@ -73,16 +73,33 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             </div>
           )}
           
-          {analysis.keyPoints && analysis.keyPoints.length > 0 && (
+          {(analysis.keyPointsFormatted || analysis.keyPoints) && (
             <div style={{ marginBottom: '20px' }}>
               <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>Key Points</h3>
-              <ul style={{ paddingLeft: '20px' }}>
-                {analysis.keyPoints.map((point, index) => (
-                  <li key={index} style={{ marginBottom: '4px', lineHeight: '1.5' }}>
-                    {point}
-                  </li>
-                ))}
-              </ul>
+              {analysis.keyPointsFormatted ? (
+                <div 
+                  style={{ 
+                    lineHeight: '1.6', 
+                    color: '#333',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: analysis.keyPointsFormatted
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\$(.*?)\$/g, '<code>$1</code>')
+                      .replace(/^#+\s+(.*)$/gm, '<h4>$1</h4>')
+                      .replace(/^-\s+(.*)$/gm, '• $1<br/>')
+                  }}
+                />
+              ) : analysis.keyPoints ? (
+                <ul style={{ paddingLeft: '20px' }}>
+                  {analysis.keyPoints.map((point: string, index: number) => (
+                    <li key={index} style={{ marginBottom: '4px', lineHeight: '1.5' }}>
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           )}
           
