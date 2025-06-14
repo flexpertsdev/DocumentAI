@@ -117,7 +117,7 @@ Be extremely precise with mathematical notation - superscripts, subscripts, frac
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4-vision-preview', // GPT-4 Vision for image analysis
+        model: 'gpt-4o-mini', // Updated model that supports vision
         messages: messages,
         max_tokens: 4096,
         temperature: 0.2, // Lower temperature for more accurate transcription
@@ -125,9 +125,18 @@ Be extremely precise with mathematical notation - superscripts, subscripts, frac
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI Vision API error:', error);
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('OpenAI Vision API error:', errorText);
+      console.error('Response status:', response.status);
+      console.error('Model used:', 'gpt-4o-mini');
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ 
+          error: 'OpenAI API error',
+          details: errorText,
+          model: 'gpt-4o-mini'
+        }),
+      };
     }
 
     const data = await response.json();

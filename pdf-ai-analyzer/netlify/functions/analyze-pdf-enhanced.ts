@@ -114,7 +114,16 @@ ${text}`;
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', errorText);
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ 
+          error: 'OpenAI API error',
+          details: errorText,
+          status: response.status
+        }),
+      };
     }
 
     const data = await response.json();
