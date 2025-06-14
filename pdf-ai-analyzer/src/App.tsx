@@ -44,14 +44,36 @@ function App() {
           useVisionMode,
         };
         
-        // Store in localStorage
-        localStorage.setItem('lastExtractedText', extractionResult.processedText);
-        localStorage.setItem('lastExtractedDocument', JSON.stringify(documentData));
-        
-        // Add to document library
-        const library = JSON.parse(localStorage.getItem('documentLibrary') || '[]');
-        library.push(documentData);
-        localStorage.setItem('documentLibrary', JSON.stringify(library));
+        // Store in localStorage with error handling
+        try {
+          localStorage.setItem('lastExtractedText', extractionResult.processedText);
+          
+          // Store document data without images to save space
+          const documentDataForStorage = {
+            ...documentData,
+            images: documentData.images?.map((img: any) => ({ 
+              pageNumber: img.pageNumber,
+              hasImage: true 
+            })) || []
+          };
+          localStorage.setItem('lastExtractedDocument', JSON.stringify(documentDataForStorage));
+          
+          // Store full document data temporarily in memory
+          (window as any).currentDocumentImages = documentData.images;
+          
+          // Limit library size to prevent quota issues
+          const library = JSON.parse(localStorage.getItem('documentLibrary') || '[]');
+          if (library.length > 10) {
+            library.shift(); // Remove oldest document
+          }
+          library.push(documentDataForStorage);
+          localStorage.setItem('documentLibrary', JSON.stringify(library));
+        } catch (storageErr) {
+          console.warn('Storage quota exceeded, clearing old data...', storageErr);
+          // Clear old data if quota exceeded
+          localStorage.removeItem('documentLibrary');
+          localStorage.setItem('lastExtractedText', extractionResult.processedText.substring(0, 50000)); // Limit text size
+        }
         
         console.log(`Extracted ${extractionResult.formulas?.length || 0} math formulas`);
         if (useVisionMode && extractionResult.images) {
@@ -79,15 +101,16 @@ function App() {
       const docData = storedDoc ? JSON.parse(storedDoc) : null;
       
       // Use vision API if images are available
-      const endpoint = docData?.useVisionMode && docData?.images 
+      const storedImages = (window as any).currentDocumentImages;
+      const endpoint = docData?.useVisionMode && storedImages 
         ? '/.netlify/functions/analyze-pdf-vision'
         : '/.netlify/functions/analyze-pdf-enhanced';
       
-      const requestData = docData?.useVisionMode && docData?.images
+      const requestData = docData?.useVisionMode && storedImages
         ? {
-            images: docData.images.slice(0, 5).map((img: any) => img.imageDataUrl), // Limit to first 5 pages for API limits
+            images: storedImages.slice(0, 5).map((img: any) => img.imageDataUrl), // Limit to first 5 pages for API limits
             analysisType: analysisType === 'key-points' ? 'summary' : analysisType, // Vision API handles differently
-            pageNumbers: docData.images.slice(0, 5).map((img: any) => img.pageNumber),
+            pageNumbers: storedImages.slice(0, 5).map((img: any) => img.pageNumber),
           }
         : {
             text: extractedText,

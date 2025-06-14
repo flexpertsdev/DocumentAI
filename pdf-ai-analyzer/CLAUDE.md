@@ -8,7 +8,7 @@
 
 ## 📍 Deployment URLs
 
-- **GitHub Repository**: https://github.com/flexpertsdev/pdf-ai-analyzer
+- **GitHub Repository**: https://github.com/flexpertsdev/DocumentAI
 - **Live Application**: https://ornate-moonbeam-239b79.netlify.app
 - **Netlify Dashboard**: https://app.netlify.com/sites/ornate-moonbeam-239b79
 
