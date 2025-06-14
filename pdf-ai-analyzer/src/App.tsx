@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import { PDFUploader } from './components/PDFUploader';
 import { AnalysisResults } from './components/AnalysisResults';
+import { QuestionExtractor } from './components/QuestionExtractor';
 import { usePDFExtraction } from './hooks/usePDFExtraction';
 import { AnalysisResult, Quiz, AnalysisType } from './types';
 import axios from 'axios';
@@ -12,7 +13,7 @@ function App() {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'analysis' | 'quiz'>('analysis');
+  const [activeTab, setActiveTab] = useState<'analysis' | 'quiz' | 'questions'>('analysis');
   
   const { extractText, status: extractionStatus, error: extractionError } = usePDFExtraction();
 
@@ -26,13 +27,29 @@ function App() {
       const extractionResult = await extractText(file);
       
       if (extractionResult && extractionResult.text) {
-        // Store extracted text in localStorage for now
-        localStorage.setItem('lastExtractedText', extractionResult.text);
-        localStorage.setItem('lastExtractedMetadata', JSON.stringify({
+        // Store comprehensive extraction data
+        const documentData = {
+          id: `doc_${Date.now()}`,
           fileName: file.name,
+          uploadedAt: new Date().toISOString(),
           pageCount: extractionResult.pageCount,
-          extractedAt: new Date().toISOString(),
-        }));
+          rawText: extractionResult.text,
+          processedText: extractionResult.processedText,
+          markdown: extractionResult.markdown,
+          formulas: extractionResult.formulas,
+          metadata: extractionResult.metadata,
+        };
+        
+        // Store in localStorage
+        localStorage.setItem('lastExtractedText', extractionResult.processedText);
+        localStorage.setItem('lastExtractedDocument', JSON.stringify(documentData));
+        
+        // Add to document library
+        const library = JSON.parse(localStorage.getItem('documentLibrary') || '[]');
+        library.push(documentData);
+        localStorage.setItem('documentLibrary', JSON.stringify(library));
+        
+        console.log(`Extracted ${extractionResult.formulas.length} math formulas`);
       }
     } catch (err) {
       console.error('Extraction failed:', err);
@@ -128,9 +145,11 @@ function App() {
                 ✓ PDF Uploaded Successfully
               </h3>
               <p style={{ margin: '0', color: '#1b5e20' }}>
-                {selectedFile.name} • {localStorage.getItem('lastExtractedMetadata') && 
-                  `${JSON.parse(localStorage.getItem('lastExtractedMetadata')!).pageCount} pages`
-                }
+                {selectedFile.name} • 
+                {localStorage.getItem('lastExtractedDocument') && (() => {
+                  const doc = JSON.parse(localStorage.getItem('lastExtractedDocument')!);
+                  return `${doc.pageCount} pages • ${doc.formulas?.length || 0} formulas detected`;
+                })()}
               </p>
             </div>
 
@@ -170,6 +189,21 @@ function App() {
                   }}
                 >
                   Quiz Generator
+                </button>
+                <button
+                  onClick={() => setActiveTab('questions')}
+                  style={{
+                    padding: '12px 24px',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    borderBottom: activeTab === 'questions' ? '2px solid #1976d2' : 'none',
+                    color: activeTab === 'questions' ? '#1976d2' : '#666',
+                    marginBottom: '-2px',
+                  }}
+                >
+                  Question Extraction
                 </button>
               </div>
 
@@ -262,12 +296,16 @@ function App() {
           </div>
         )}
 
-        <AnalysisResults
-          analysis={activeTab === 'analysis' ? analysisResult || undefined : undefined}
-          quiz={activeTab === 'quiz' ? quiz || undefined : undefined}
-          isLoading={isAnalyzing}
-          error={analysisError || undefined}
-        />
+        {activeTab !== 'questions' ? (
+          <AnalysisResults
+            analysis={activeTab === 'analysis' ? analysisResult || undefined : undefined}
+            quiz={activeTab === 'quiz' ? quiz || undefined : undefined}
+            isLoading={isAnalyzing}
+            error={analysisError || undefined}
+          />
+        ) : (
+          <QuestionExtractor isProcessing={isProcessing} />
+        )}
       </main>
     </div>
   );

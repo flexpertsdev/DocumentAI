@@ -1,10 +1,14 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import { detectAndParseMathFormulas, formatForMarkdown, ParsedFormula } from './mathParser';
 
 // Set worker src - webpack will handle copying the worker file
 pdfjsLib.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
 
 export interface PDFExtractionResult {
   text: string;
+  processedText: string;
+  markdown: string;
+  formulas: ParsedFormula[];
   pageCount: number;
   metadata?: {
     title?: string;
@@ -41,8 +45,15 @@ export async function extractTextFromPDF(file: File): Promise<PDFExtractionResul
     const metadata = await pdf.getMetadata();
     const info = metadata.info as any;
     
+    // Process math formulas
+    const { processedText, formulas } = detectAndParseMathFormulas(fullText.trim());
+    const markdown = formatForMarkdown(processedText, formulas);
+    
     return {
       text: fullText.trim(),
+      processedText,
+      markdown,
+      formulas,
       pageCount: pdf.numPages,
       metadata: info ? {
         title: info.Title,

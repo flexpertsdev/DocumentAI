@@ -36,14 +36,16 @@ const handler: Handler = async (event) => {
     }
 
     // Truncate text if too long (to avoid token limits)
-    const maxTextLength = 3000;
+    const maxTextLength = 2500;
     const truncatedText = text.length > maxTextLength 
       ? text.substring(0, maxTextLength) + '...' 
       : text;
 
-    const prompt = `Based on the following text, generate ${numberOfQuestions} multiple-choice questions at ${difficulty} difficulty level. 
+    const prompt = `Based on the following text, generate ${numberOfQuestions} multiple-choice questions at ${difficulty} difficulty level.
+
+IMPORTANT: The text may contain math formulas in LaTeX format like $formula$ or $$formula$$. Preserve these in your questions.
     
-Format the response as a JSON array where each question has:
+Format the response as a JSON object with a "questions" array where each question has:
 - question: the question text
 - options: array of 4 possible answers
 - correctAnswer: index (0-3) of the correct answer
@@ -60,7 +62,7 @@ ${truncatedText}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-3.5-turbo-1106',
         messages: [
           { 
             role: 'system', 
@@ -68,8 +70,9 @@ ${truncatedText}`;
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.8,
+        temperature: 0.7,
         max_tokens: 2000,
+        response_format: { type: 'json_object' }
       }),
     });
 
@@ -84,7 +87,8 @@ ${truncatedText}`;
     
     try {
       // Try to parse the AI response as JSON
-      questions = JSON.parse(aiResponse);
+      const parsed = JSON.parse(aiResponse);
+      questions = parsed.questions || parsed;
       
       // Validate the structure
       if (!Array.isArray(questions)) {
