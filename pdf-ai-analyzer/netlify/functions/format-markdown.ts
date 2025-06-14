@@ -43,6 +43,13 @@ Requirements:
 8. Ensure all math formulas are in proper LaTeX with $ or $$ delimiters
 9. Add helpful notes like *(OCR error)* where text is clearly corrupted
 10. Make it scannable and easy to read
+11. IMPORTANT: Add confidence indicators:
+    - 🟢 [High confidence] for content that was clear and unambiguous
+    - 🟡 [Medium confidence] for content where minor corrections were made
+    - 🔴 [Low confidence - needs review] for heavily corrupted or unclear content
+    - Add notes like *(interpreted as X, could be Y)* when you made assumptions
+12. For mathematical formulas you had to interpret, show alternatives in parentheses
+    Example: $x^2$ *(or possibly x₂)*
 
 Here's the content to format:
 ${content}`;

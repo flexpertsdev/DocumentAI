@@ -151,6 +151,12 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     __html: formattedContent
                       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                       .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/🟢/g, '<span style="color: #22c55e; font-size: 16px;">🟢</span>')
+                      .replace(/🟡/g, '<span style="color: #eab308; font-size: 16px;">🟡</span>')
+                      .replace(/🔴/g, '<span style="color: #ef4444; font-size: 16px;">🔴</span>')
+                      .replace(/\[High confidence\]/g, '<span style="color: #22c55e; font-weight: 600; font-size: 12px;">[High confidence]</span>')
+                      .replace(/\[Medium confidence\]/g, '<span style="color: #eab308; font-weight: 600; font-size: 12px;">[Medium confidence]</span>')
+                      .replace(/\[Low confidence - needs review\]/g, '<span style="color: #ef4444; font-weight: 600; font-size: 12px;">[Low confidence - needs review]</span>')
                       .replace(/\$\$(.*?)\$\$/g, '<div style="text-align: center; margin: 10px 0;"><code style="background: #f5f5f5; padding: 8px 12px; border-radius: 4px; display: inline-block;">$1</code></div>')
                       .replace(/\$(.*?)\$/g, '<code style="background: #f5f5f5; padding: 2px 4px; border-radius: 3px;">$1</code>')
                       .replace(/^###\s+(.*)$/gm, '<h4 style="margin-top: 20px; margin-bottom: 12px; color: #333;">$1</h4>')
